@@ -1,0 +1,119 @@
+@using EventEase.Models
+@using EventEase.Services
+@inject IRegistrationService RegistrationService
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Event Attendance</h5>
+    </div>
+    <div class="card-body">
+        @if (IsLoading)
+        {
+            <div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        }
+        else if (!Registrations.Any())
+        {
+            <div class="alert alert-info">
+                No registrations found for this event.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Registration Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var registration in Registrations)
+                        {
+                            <tr>
+                                <td>@registration.FirstName @registration.LastName</td>
+                                <td>@registration.Email</td>
+                                <td>@registration.RegistrationDate.ToString("MMM dd, yyyy")</td>
+                                <td>
+                                    @if (registration.HasAttended)
+                                    {
+                                        <span class="badge bg-success">Attended</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Not Attended</span>
+                                    }
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm @(registration.HasAttended ? "btn-outline-danger" : "btn-outline-success")"
+                                            @onclick="() => ToggleAttendance(registration)">
+                                        @if (registration.HasAttended)
+                                        {
+                                            <span>Mark Not Attended</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Mark Attended</span>
+                                        }
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-3">
+                <strong>Summary:</strong>
+                <ul class="list-unstyled">
+                    <li>Total Registrations: @Registrations.Count</li>
+                    <li>Attended: @Registrations.Count(r => r.HasAttended)</li>
+                    <li>Not Attended: @Registrations.Count(r => !r.HasAttended)</li>
+                </ul>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int EventId { get; set; }
+
+    private List<Registration> Registrations = new();
+    private bool IsLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRegistrations();
+    }
+
+    private async Task LoadRegistrations()
+    {
+        try
+        {
+            IsLoading = true;
+            Registrations = await RegistrationService.GetEventRegistrationsAsync(EventId);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task ToggleAttendance(Registration registration)
+    {
+        var success = await RegistrationService.UpdateAttendanceAsync(registration.Id, !registration.HasAttended);
+        if (success)
+        {
+            registration.HasAttended = !registration.HasAttended;
+            StateHasChanged();
+        }
+    }
+}

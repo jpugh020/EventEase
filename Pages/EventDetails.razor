@@ -1,0 +1,145 @@
+@page "/event/{Id:int}"
+@using EventEase.Models
+@using EventEase.Services
+@using EventEase.Components
+@using EventEase.Components.RegistrationForm
+@inject IEventService EventService
+@inject NavigationManager NavigationManager
+
+
+@if (IsLoading)
+{
+    <div class="text-center p-3">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (Event != null)
+{
+    <h3>@Event.Name</h3>
+    <div class="row">
+        <div class="col-md-6">
+            <ErrorBoundary>
+                <ChildContent>
+                    @if (!string.IsNullOrEmpty(Event.ImageUrl))
+                    {
+                        <img src="@Event.ImageUrl" 
+                             class="img-fluid" 
+                             alt="@Event.Name"
+                             @onerror="HandleImageError">
+                    }
+                </ChildContent>
+                <ErrorContent>
+                    <img src="/images/placeholder-event.jpg" 
+                         class="img-fluid" 
+                         alt="Event image unavailable">
+                </ErrorContent>
+            </ErrorBoundary>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Event Details</h4>
+                    <p class="card-text">@Event.Description</p>
+                    <dl class="row">
+                        <dt class="col-sm-4">Date</dt>
+                        <dd class="col-sm-8">@Event.Date.ToString("MMMM dd, yyyy")</dd>
+
+                        <dt class="col-sm-4">Location</dt>
+                        <dd class="col-sm-8">@Event.Location</dd>
+
+                        <dt class="col-sm-4">Price</dt>
+                        <dd class="col-sm-8">@Event.Price.ToString("C")</dd>
+
+                        <dt class="col-sm-4">Available Spots</dt>
+                        <dd class="col-sm-8">@Event.MaxAttendees</dd>
+                    </dl>
+                    
+                    @if (!ShowRegistrationForm)
+                    {
+                        @if (Event.IsAvailable)
+                        {
+                            <button class="btn btn-primary w-100" @onclick="ShowRegistrationFormHandler">
+                                Register Now
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-secondary w-100" disabled>Sold Out</button>
+                        }
+                    }
+
+                    @if (ShowRegistrationForm && Event.IsAvailable)
+                    {
+                        <div class="mt-4">
+                            <h4>Registration Form</h4>
+                            <RegistrationForm EventData="@Event" />
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-warning" role="alert">
+        <h4 class="alert-heading">Event Not Found</h4>
+        <p>Sorry, we couldn't find the event you're looking for.</p>
+        <hr>
+        <p class="mb-0">
+            <button class="btn btn-link p-0" @onclick="NavigateToEvents">
+                View all events
+            </button>
+        </p>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Event? Event { get; set; }
+    private bool IsLoading = true;
+    private bool ShowRegistrationForm = false;
+
+    [CascadingParameter]
+    public bool IsAdmin { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            Event = await EventService.GetEventByIdAsync(Id);
+        }
+        catch (Exception)
+        {
+            // Log the error in a production environment
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private void HandleImageError()
+    {
+        if (Event != null)
+        {
+            Event.ImageUrl = "/images/placeholder-event.jpg";
+            StateHasChanged();
+        }
+    }
+
+    private void ShowRegistrationFormHandler()
+    {
+        ShowRegistrationForm = true;
+    }
+
+    private void NavigateToEvents()
+    {
+        NavigationManager.NavigateTo("/events");
+    }
+}

@@ -1,0 +1,101 @@
+@page "/events"
+@using EventEase.Models
+@using EventEase.Components
+@using EventEase.Services
+@inject IEventService EventService
+
+<h3>Events</h3>
+
+@if (IsLoading)
+{
+    <div class="text-center p-3">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (!EventsList.Any())
+{
+    <div class="alert alert-info" role="alert">
+        No events found.
+    </div>
+}
+else
+{
+    <div class="row">
+        @foreach (var evt in DisplayedEvents)
+        {
+            <div class="col-md-4 mb-4">
+                <ErrorBoundary>
+                    <ChildContent>
+                        <EventCard EventData="evt" />
+                    </ChildContent>
+                    <ErrorContent>
+                        <div class="alert alert-danger">
+                            Error loading event card. Please try again later.
+                        </div>
+                    </ErrorContent>
+                </ErrorBoundary>
+            </div>
+        }
+    </div>
+
+    @if (TotalPages > 1)
+    {
+        <nav aria-label="Events navigation">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(CurrentPage == 1 ? "disabled" : "")">
+                    <button class="page-link" @onclick="() => ChangePage(CurrentPage - 1)" disabled="@(CurrentPage == 1)">Previous</button>
+                </li>
+                @for (int i = 1; i <= TotalPages; i++)
+                {
+                    var pageNumber = i;
+                    <li class="page-item @(pageNumber == CurrentPage ? "active" : "")">
+                        <button class="page-link" @onclick="() => ChangePage(pageNumber)">@i</button>
+                    </li>
+                }
+                <li class="page-item @(CurrentPage == TotalPages ? "disabled" : "")">
+                    <button class="page-link" @onclick="() => ChangePage(CurrentPage + 1)" disabled="@(CurrentPage == TotalPages)">Next</button>
+                </li>
+            </ul>
+        </nav>
+    }
+}
+
+@code {
+    private List<Event> EventsList = new();
+    private bool IsLoading = true;
+    private int CurrentPage = 1;
+    private const int PageSize = 6;
+
+    private IEnumerable<Event> DisplayedEvents => EventsList
+        .Skip((CurrentPage - 1) * PageSize)
+        .Take(PageSize);
+
+    private int TotalPages => (int)Math.Ceiling(EventsList.Count / (double)PageSize);
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            EventsList = await EventService.GetEventsAsync();
+        }
+        catch (Exception)
+        {
+            // Log the error in a production environment
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private void ChangePage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            CurrentPage = page;
+        }
+    }
+}

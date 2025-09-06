@@ -1,0 +1,46 @@
+@using EventEase.Models
+
+<div class="card mb-4" style="width: 18rem;">
+    @if (!string.IsNullOrEmpty(EventData.ImageUrl))
+    {
+        <img src="@EventData.ImageUrl" 
+             class="card-img-top" 
+             alt="@EventData.Name"
+             loading="lazy"
+             @onerror="HandleImageError" />
+    }
+    <div class="card-body">
+        <h5 class="card-title">@EventData.Name</h5>
+        <p class="card-text">@(EventData.Description?.Length > 100 ? EventData.Description[..100] + "..." : EventData.Description)</p>
+        <p class="card-text">
+            <small class="text-muted">
+                <i class="bi bi-calendar"></i> @EventData.Date.ToString("MMMM dd, yyyy")
+            </small>
+        </p>
+        <p class="card-text">
+            <small class="text-muted">
+                <i class="bi bi-geo-alt"></i> @EventData.Location
+            </small>
+        </p>
+        <p class="card-text">
+            <strong>Price: </strong>@EventData.Price.ToString("C")
+        </p>
+        <NavLink href="@($"/event/{EventData.Id}")" class="btn btn-primary">View Details</NavLink>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Event EventData { get; set; } = new();
+
+    private void HandleImageError()
+    {
+        EventData.ImageUrl = "/images/placeholder-event.jpg";
+        StateHasChanged();
+    }
+}
+
+@code {
+    [Parameter]
+    public Event Event { get; set; } = new();
+}

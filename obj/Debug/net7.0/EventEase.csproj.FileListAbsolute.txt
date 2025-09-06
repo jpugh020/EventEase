@@ -1,0 +1,8 @@
+C:\Users\Jake\Coding Projects\EventEase\obj\Debug\net7.0\rpswa.dswa.cache.json
+C:\Users\Jake\Coding Projects\EventEase\obj\Debug\net7.0\EventEase.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Jake\Coding Projects\EventEase\obj\Debug\net7.0\EventEase.AssemblyInfoInputs.cache
+C:\Users\Jake\Coding Projects\EventEase\obj\Debug\net7.0\EventEase.AssemblyInfo.cs
+C:\Users\Jake\Coding Projects\EventEase\obj\Debug\net7.0\EventEase.csproj.CoreCompileInputs.cache
+C:\Users\Jake\Coding Projects\EventEase\obj\Debug\net7.0\EventEase.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\Jake\Coding Projects\EventEase\obj\Debug\net7.0\EventEase.RazorAssemblyInfo.cache
+C:\Users\Jake\Coding Projects\EventEase\obj\Debug\net7.0\EventEase.RazorAssemblyInfo.cs

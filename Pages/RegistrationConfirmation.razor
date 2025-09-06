@@ -1,0 +1,96 @@
+@page "/registration/confirmation/{RegistrationId:int}"
+@using EventEase.Services
+@using EventEase.Models
+@inject IRegistrationService RegistrationService
+@inject NavigationManager NavigationManager
+
+<div class="container mt-4">
+    @if (IsLoading)
+    {
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (Registration != null)
+    {
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+                <h2 class="mt-3">Registration Confirmed!</h2>
+                <p class="lead">Thank you for registering, @Registration.FirstName!</p>
+                
+                <div class="mt-4">
+                    <h4>Registration Details</h4>
+                    <dl class="row justify-content-center">
+                        <dt class="col-sm-3">Name</dt>
+                        <dd class="col-sm-9">@Registration.FirstName @Registration.LastName</dd>
+
+                        <dt class="col-sm-3">Email</dt>
+                        <dd class="col-sm-9">@Registration.Email</dd>
+
+                        <dt class="col-sm-3">Registration Date</dt>
+                        <dd class="col-sm-9">@Registration.RegistrationDate.ToString("MMMM dd, yyyy")</dd>
+                    </dl>
+                </div>
+
+                <div class="mt-4">
+                    <button class="btn btn-primary me-2" @onclick="NavigateToEvent">
+                        View Event Details
+                    </button>
+                    <button class="btn btn-outline-primary" @onclick="NavigateToEvents">
+                        Browse More Events
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-danger">
+            <h4 class="alert-heading">Registration Not Found</h4>
+            <p>We couldn't find your registration. Please try registering again.</p>
+            <button class="btn btn-primary" @onclick="NavigateToEvents">
+                View All Events
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int RegistrationId { get; set; }
+
+    private Registration? Registration;
+    private bool IsLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Registration = await RegistrationService.GetRegistrationAsync(RegistrationId);
+        }
+        catch (Exception)
+        {
+            // In production environment, log the error
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private void NavigateToEvent()
+    {
+        if (Registration != null)
+        {
+            NavigationManager.NavigateTo($"/event/{Registration.EventId}");
+        }
+    }
+
+    private void NavigateToEvents()
+    {
+        NavigationManager.NavigateTo("/events");
+    }
+}

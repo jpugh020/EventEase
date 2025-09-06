@@ -1,0 +1,126 @@
+@using EventEase.Models
+@using EventEase.Services
+@inject IRegistrationService RegistrationService
+@inject IUserSessionService UserSessionService
+@inject NavigationManager NavigationManager
+
+<EditForm Model="@registration" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label for="firstName" class="form-label">First Name</label>
+        <InputText id="firstName" class="form-control" @bind-Value="registration.FirstName" />
+        <ValidationMessage For="@(() => registration.FirstName)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="lastName" class="form-label">Last Name</label>
+        <InputText id="lastName" class="form-control" @bind-Value="registration.LastName" />
+        <ValidationMessage For="@(() => registration.LastName)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <InputText id="email" class="form-control" @bind-Value="registration.Email" />
+        <ValidationMessage For="@(() => registration.Email)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="phone" class="form-label">Phone Number (Optional)</label>
+        <InputText id="phone" class="form-control" @bind-Value="registration.PhoneNumber" />
+        <ValidationMessage For="@(() => registration.PhoneNumber)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="requirements" class="form-label">Special Requirements (Optional)</label>
+        <InputTextArea id="requirements" class="form-control" @bind-Value="registration.SpecialRequirements" />
+        <ValidationMessage For="@(() => registration.SpecialRequirements)" />
+    </div>
+
+    @if (ErrorMessage != null)
+    {
+        <div class="alert alert-danger">@ErrorMessage</div>
+    }
+
+    <button type="submit" class="btn btn-primary" disabled="@IsSubmitting">
+        @if (IsSubmitting)
+        {
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            <span class="ms-2">Registering...</span>
+        }
+        else
+        {
+            <span>Register</span>
+        }
+    </button>
+</EditForm>
+
+@code {
+    [Parameter]
+    public Event EventData { get; set; } = default!;
+
+    private Registration registration = default!;
+    private bool IsSubmitting;
+    private string? ErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Initialize registration with EventData
+        registration = new Registration
+        {
+            EventId = EventData.Id,
+            Event = EventData
+        };
+
+        try 
+        {
+            var session = await UserSessionService.GetCurrentSessionAsync();
+            
+            // Pre-fill form if user has an active session
+            if (session.IsAuthenticated)
+            {
+                registration.FirstName = session.FirstName;
+                registration.LastName = session.LastName;
+                registration.Email = session.Email;
+            }
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Failed to load user session.";
+            // In production, log the error
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            IsSubmitting = true;
+            ErrorMessage = null;
+
+            // Create registration
+            var result = await RegistrationService.CreateRegistrationAsync(registration);
+
+            // Update user session
+            var session = await UserSessionService.GetCurrentSessionAsync();
+            session.FirstName = registration.FirstName;
+            session.LastName = registration.LastName;
+            session.Email = registration.Email;
+            session.IsAuthenticated = true;
+            await UserSessionService.UpdateSessionAsync(session);
+
+            // Navigate to confirmation page
+            NavigationManager.NavigateTo($"/registration/confirmation/{result.Id}");
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "An error occurred while processing your registration. Please try again.";
+            // In a production environment, log the error
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
+}
